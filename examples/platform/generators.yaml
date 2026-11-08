@@ -1,0 +1,11 @@
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: strong-password
+  namespace: api
+spec:
+  length: 32
+  digits: 5
+  symbols: 5
+  noUpper: false
+  allowRepeat: true

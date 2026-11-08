@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: api
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: registry-credentials
+      initContainers:
+        - name: migrate
+          image: ghcr.io/acme/api:1.2.3
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api-db-credentials
+                  key: DATABASE_URL
+      containers:
+        - name: api
+          image: ghcr.io/acme/api:1.2.3
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: api-db-credentials
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: api-db-credentials
+                  key: password
+            - name: SESSION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-session
+                  key: password
+            - name: LOG_LEVEL
+              value: info
+          volumeMounts:
+            - name: tls
+              mountPath: /etc/tls
+              readOnly: true
+      volumes:
+        - name: tls
+          secret:
+            secretName: api-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api
+  namespace: api
+spec:
+  tls:
+    - hosts: [api.example.com]
+      secretName: api-tls
+  rules:
+    - host: api.example.com

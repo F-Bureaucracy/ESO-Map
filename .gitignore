@@ -1,0 +1,4 @@
+/eso-map
+/bin/
+*.html
+!internal/render/assets/*.html.tmpl

@@ -1,0 +1,43 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: worker-config
+  namespace: worker
+spec:
+  refreshInterval: 15m
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: openbao
+  target:
+    name: worker-env
+  dataFrom:
+    - extract:
+        key: apps/worker/env
+    - find:
+        path: apps/shared
+        name:
+          regexp: "^feature-.*"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-report
+  namespace: worker
+spec:
+  schedule: "0 3 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: report
+              image: ghcr.io/acme/report:2.0.0
+              envFrom:
+                - secretRef:
+                    name: worker-env
+              env:
+                - name: SMTP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: smtp-credentials
+                      key: password
